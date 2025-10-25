@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChatGPT 教師アプリ (β)</title>
+<style>
+body {
+  font-family: sans-serif; background: #f7f7f7; color: #333; margin: 0; padding: 1em;
+}
+h1 { text-align: center; }
+textarea, input {
+  width: 100%; box-sizing: border-box; padding: 0.5em; margin-top: 0.5em;
+}
+#chat { background: #fff; border: 1px solid #ccc; padding: 1em; height: 50vh; overflow-y: auto; }
+.msg { margin: 0.5em 0; }
+.user { text-align: right; color: #007acc; }
+.ai { text-align: left; color: #333; }
+.tabs button {
+  margin: 0.2em; padding: 0.5em 1em; border: none; background: #ccc; cursor: pointer;
+}
+.tabs button.active { background: #007acc; color: #fff; }
+</style>
+</head>
+<body>
+
+<h1>ChatGPT 教師アプリ (β)</h1>
+
+<label>🔑 OpenAI APIキー:
+  <input type="password" id="apiKey" placeholder="sk-..." />
+  <button onclick="saveKey()">保存</button>
+</label>
+
+<div class="tabs">
+  <button onclick="setSubject('国語')" class="active">国語</button>
+  <button onclick="setSubject('数学')">数学</button>
+  <button onclick="setSubject('英語')">英語</button>
+</div>
+
+<div id="chat"></div>
+
+<textarea id="userInput" placeholder="質問を入力..." rows="3"></textarea>
+<button onclick="sendMessage()">送信</button>
+
+<script>
+let subject = "国語";
+let apiKey = localStorage.getItem("openai_api_key") || "";
+
+document.getElementById("apiKey").value = apiKey;
+
+function saveKey() {
+  apiKey = document.getElementById("apiKey").value;
+  localStorage.setItem("openai_api_key", apiKey);
+  alert("APIキーを保存しました（ブラウザ内）");
+}
+
+function setSubject(subj) {
+  subject = subj;
+  document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
+  event.target.classList.add("active");
+  addMessage("ai", `教科を「${subject}」に変更しました。何を学びましょうか？`);
+}
+
+function addMessage(role, text) {
+  const div = document.createElement("div");
+  div.className = "msg " + role;
+  div.textContent = text;
+  document.getElementById("chat").appendChild(div);
+  document.getElementById("chat").scrollTop = document.getElementById("chat").scrollHeight;
+}
+
+async function sendMessage() {
+  const input = document.getElementById("userInput");
+  const text = input.value.trim();
+  if (!text) return;
+  addMessage("user", text);
+  input.value = "";
+
+  if (!apiKey) { alert("APIキーを入力してください"); return; }
+
+  const prompt = `あなたは中高生向けの優秀な${subject}教師です。生徒の理解を助けるように、優しく論理的に答えてください。質問: ${text}`;
+  
+  addMessage("ai", "考え中...");
+
+  try {
+    const res = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [{role: "user", content: prompt}]
+      })
+    });
+    const data = await res.json();
+    const reply = data.choices?.[0]?.message?.content || "（応答なし）";
+    document.querySelector("#chat .ai:last-child").textContent = reply;
+  } catch (e) {
+    document.querySelector("#chat .ai:last-child").textContent = "エラー: " + e.message;
+  }
+}
+</script>
+
+</body>
+</html>
