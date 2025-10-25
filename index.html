@@ -32,9 +32,9 @@ textarea, input {
 </label>
 
 <div class="tabs">
-  <button onclick="setSubject('国語')" class="active">国語</button>
-  <button onclick="setSubject('数学')">数学</button>
-  <button onclick="setSubject('英語')">英語</button>
+  <button onclick="setSubject(this, '国語')" class="active">国語</button>
+  <button onclick="setSubject(this, '数学')">数学</button>
+  <button onclick="setSubject(this, '英語')">英語</button>
 </div>
 
 <div id="chat"></div>
@@ -54,10 +54,10 @@ function saveKey() {
   alert("APIキーを保存しました（ブラウザ内）");
 }
 
-function setSubject(subj) {
+function setSubject(btn, subj) {
   subject = subj;
   document.querySelectorAll(".tabs button").forEach(b=>b.classList.remove("active"));
-  event.target.classList.add("active");
+  btn.classList.add("active");
   addMessage("ai", `教科を「${subject}」に変更しました。何を学びましょうか？`);
 }
 
